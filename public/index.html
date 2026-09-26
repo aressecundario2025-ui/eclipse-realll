@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Eclipse World - Servidor Minecraft"
+    >
+
+    <title>Eclipse World</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+    <div class="background"></div>
+
+    <header class="navbar">
+
+        <div class="logo">
+            <span class="logo-icon">◐</span>
+            <span>ECLIPSE <strong>WORLD</strong></span>
+        </div>
+
+        <nav>
+            <a href="#inicio">Inicio</a>
+            <a href="#servidor">Servidor</a>
+            <a href="#sobre">Sobre nosotros</a>
+            <a href="#discord">Discord</a>
+        </nav>
+
+    </header>
+
+
+    <main id="inicio">
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <div class="badge">
+                    ✦ SERVIDOR MINECRAFT
+                </div>
+
+                <h1>
+                    ECLIPSE
+                    <span>WORLD</span>
+                </h1>
+
+                <p class="hero-description">
+                    Una nueva experiencia de Minecraft.
+                    Entra, juega y forma parte de Eclipse World.
+                </p>
+
+                <div class="hero-buttons">
+
+                    <button
+                        id="copyIp"
+                        class="primary-button"
+                    >
+                        COPIAR IP
+                    </button>
+
+                    <a
+                        href="#servidor"
+                        class="secondary-button"
+                    >
+                        VER SERVIDOR
+                    </a>
+
+                </div>
+
+                <div
+                    id="copyMessage"
+                    class="copy-message"
+                ></div>
+
+            </div>
+
+            <div class="eclipse">
+
+                <div class="eclipse-glow"></div>
+
+                <div class="moon">
+                    <div class="moon-shadow"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="servidor"
+            class="server-section"
+        >
+
+            <div class="section-title">
+
+                <span>ESTADO DEL SERVIDOR</span>
+
+                <h2>
+                    Eclipse World
+                </h2>
+
+            </div>
+
+
+            <div class="server-card">
+
+                <div class="server-header">
+
+                    <div class="server-status">
+
+                        <span
+                            id="statusDot"
+                            class="status-dot loading"
+                        ></span>
+
+                        <span id="statusText">
+                            COMPROBANDO...
+                        </span>
+
+                    </div>
+
+                    <span class="live">
+                        ● LIVE
+                    </span>
+
+                </div>
+
+
+                <div class="server-ip">
+
+                    <span>IP DEL SERVIDOR</span>
+
+                    <strong id="serverIp">
+                        play.eclipseworld.pro
+                    </strong>
+
+                </div>
+
+
+                <div class="stats">
+
+                    <div class="stat">
+
+                        <span class="stat-icon">
+                            👥
+                        </span>
+
+                        <div>
+
+                            <small>
+                                JUGADORES
+                            </small>
+
+                            <strong id="players">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat">
+
+                        <span class="stat-icon">
+                            🎮
+                        </span>
+
+                        <div>
+
+                            <small>
+                                VERSIÓN
+                            </small>
+
+                            <strong id="version">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat">
+
+                        <span class="stat-icon">
+                            🌐
+                        </span>
+
+                        <div>
+
+                            <small>
+                                ESTADO
+                            </small>
+
+                            <strong id="serverState">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="motd-box">
+
+                    <small>
+                        MENSAJE DEL SERVIDOR
+                    </small>
+
+                    <p id="motd">
+                        Consultando información...
+                    </p>
+
+                </div>
+
+
+                <div class="updated">
+
+                    Última actualización:
+                    <span id="updated">
+                        —
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="sobre"
+            class="about-section"
+        >
+
+            <div class="section-title">
+
+                <span>DESCUBRE</span>
+
+                <h2>
+                    Bienvenido a Eclipse World
+                </h2>
+
+            </div>
+
+
+            <div class="features">
+
+                <article class="feature">
+
+                    <div class="feature-icon">
+                        ⚡
+                    </div>
+
+                    <h3>
+                        EXPERIENCIA
+                    </h3>
+
+                    <p>
+                        Una comunidad preparada para
+                        disfrutar de Minecraft juntos.
+                    </p>
+
+                </article>
+
+
+                <article class="feature">
+
+                    <div class="feature-icon">
+                        🌑
+                    </div>
+
+                    <h3>
+                        ECLIPSE
+                    </h3>
+
+                    <p>
+                        Una identidad propia y un mundo
+                        que sigue creciendo.
+                    </p>
+
+                </article>
+
+
+                <article class="feature">
+
+                    <div class="feature-icon">
+                        👑
+                    </div>
+
+                    <h3>
+                        COMUNIDAD
+                    </h3>
+
+                    <p>
+                        Juega, conoce gente y forma parte
+                        de nuestra comunidad.
+                    </p>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="discord"
+            class="discord-section"
+        >
+
+            <div>
+
+                <span>
+                    ¿QUIERES FORMAR PARTE?
+                </span>
+
+                <h2>
+                    Únete a nuestra comunidad
+                </h2>
+
+                <p>
+                    Entra en Discord para conocer las
+                    novedades de Eclipse World.
+                </p>
+
+            </div>
+
+
+            <a
+                href="#"
+                class="discord-button"
+                id="discordButton"
+            >
+                UNIRME A DISCORD
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <div class="footer-logo">
+            ◐ ECLIPSE WORLD
+        </div>
+
+        <p>
+            © 2026 Eclipse World.
+            Todos los derechos reservados.
+        </p>
+
+        <p class="host">
+            Servidor alojado por Holy.gg
+        </p>
+
+    </footer>
+
+
+    <script src="/script.js"></script>
+
+</body>
+</html>
