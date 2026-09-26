@@ -10,13 +10,14 @@ const HOST = "0.0.0.0";
 const MINECRAFT_HOST = "play.eclipseworld.pro";
 const DEFAULT_PORT = 25565;
 
+// Servir archivos de la carpeta public
 app.use(express.static("public"));
 
-/*
- * Resolución de SRV de Minecraft.
- * Si play.eclipseworld.pro utiliza un puerto diferente,
- * intentamos descubrirlo automáticamente.
- */
+
+// ================================
+// RESOLVER DIRECCIÓN DE MINECRAFT
+// ================================
+
 async function resolveMinecraftAddress(host) {
     try {
         const srvRecords = await dns.resolveSrv(`_minecraft._tcp.${host}`);
@@ -32,7 +33,7 @@ async function resolveMinecraftAddress(host) {
             };
         }
     } catch (error) {
-        // No hay SRV: usamos el puerto estándar.
+        // Si no existe SRV, usamos el puerto estándar.
     }
 
     return {
@@ -41,9 +42,11 @@ async function resolveMinecraftAddress(host) {
     };
 }
 
-/*
- * Codificación VarInt de Minecraft.
- */
+
+// ================================
+// MINECRAFT VARINT
+// ================================
+
 function encodeVarInt(value) {
     const bytes = [];
 
@@ -60,9 +63,7 @@ function encodeVarInt(value) {
     return Buffer.from(bytes);
 }
 
-/*
- * Lee un VarInt desde un Buffer.
- */
+
 function readVarInt(buffer, offset = 0) {
     let numRead = 0;
     let result = 0;
@@ -93,9 +94,11 @@ function readVarInt(buffer, offset = 0) {
     };
 }
 
-/*
- * Crea un String de Minecraft.
- */
+
+// ================================
+// MINECRAFT STRING
+// ================================
+
 function encodeString(value) {
     const data = Buffer.from(value, "utf8");
 
@@ -105,13 +108,18 @@ function encodeString(value) {
     ]);
 }
 
-/*
- * Crea el paquete Handshake.
- */
+
+// ================================
+// HANDSHAKE
+// ================================
+
 function createHandshake(host, port) {
+
+    // Versión de protocolo suficientemente moderna
     const protocolVersion = encodeVarInt(770);
 
     const serverAddress = encodeString(host);
+
     const serverPort = Buffer.alloc(2);
 
     serverPort.writeUInt16BE(port, 0);
@@ -132,39 +140,39 @@ function createHandshake(host, port) {
     ]);
 }
 
-/*
- * Paquete Status Request.
- */
+
+// ================================
+// STATUS REQUEST
+// ================================
+
 function createStatusRequest() {
-    return Buffer.from([0x01, 0x00]);
+    return Buffer.from([
+        0x01,
+        0x00
+    ]);
 }
 
-/*
- * Paquete Ping.
- */
-function createPing() {
-    const payload = Buffer.alloc(9);
 
-    payload[0] = 0x09;
+// ================================
+// CONSULTA MINECRAFT
+// ================================
 
-    // Longitud del payload.
-    payload.writeBigInt64BE(BigInt(Date.now()), 1);
-
-    return payload;
-}
-
-/*
- * Consulta Minecraft Java directamente.
- */
 function queryMinecraft(host, port, timeout = 6000) {
+
     return new Promise((resolve, reject) => {
+
         const socket = new net.Socket();
 
         let data = Buffer.alloc(0);
+
         let finished = false;
 
-        const finish = (error, result) => {
-            if (finished) return;
+
+        function finish(error, result) {
+
+            if (finished) {
+                return;
+            }
 
             finished = true;
 
@@ -175,196 +183,395 @@ function queryMinecraft(host, port, timeout = 6000) {
             } else {
                 resolve(result);
             }
-        };
+        }
+
 
         socket.setTimeout(timeout);
+
 
         socket.on("timeout", () => {
             finish(new Error("Timeout"));
         });
 
+
         socket.on("error", (error) => {
             finish(error);
         });
 
+
         socket.on("data", (chunk) => {
-            data = Buffer.concat([data, chunk]);
+
+            data = Buffer.concat([
+                data,
+                chunk
+            ]);
+
 
             try {
-                /*
-                 * Primer paquete:
-                 * packet length
-                 */
-                const packetLengthInfo = readVarInt(data, 0);
 
-                const packetLength = packetLengthInfo.value;
-                const packetStart = packetLengthInfo.size;
+                // Longitud del paquete
+                const packetLengthInfo =
+                    readVarInt(data, 0);
 
-                if (data.length < packetStart + packetLength) {
+                const packetLength =
+                    packetLengthInfo.value;
+
+                const packetStart =
+                    packetLengthInfo.size;
+
+
+                if (
+                    data.length <
+                    packetStart + packetLength
+                ) {
                     return;
                 }
 
-                const packet = data.subarray(
-                    packetStart,
-                    packetStart + packetLength
-                );
 
-                const packetIdInfo = readVarInt(packet, 0);
+                const packet =
+                    data.subarray(
+                        packetStart,
+                        packetStart + packetLength
+                    );
+
+
+                // ID del paquete
+                const packetIdInfo =
+                    readVarInt(packet, 0);
+
 
                 if (packetIdInfo.value !== 0x00) {
-                    finish(new Error("Respuesta Minecraft inválida"));
+
+                    finish(
+                        new Error(
+                            "Respuesta Minecraft inválida"
+                        )
+                    );
+
                     return;
                 }
 
-                const jsonLengthInfo = readVarInt(
-                    packet,
-                    packetIdInfo.size
-                );
+
+                // Longitud del JSON
+                const jsonLengthInfo =
+                    readVarInt(
+                        packet,
+                        packetIdInfo.size
+                    );
+
 
                 const jsonStart =
-                    packetIdInfo.size + jsonLengthInfo.size;
+                    packetIdInfo.size +
+                    jsonLengthInfo.size;
+
 
                 const jsonEnd =
-                    jsonStart + jsonLengthInfo.value;
+                    jsonStart +
+                    jsonLengthInfo.value;
 
-                if (packet.length < jsonEnd) {
+
+                if (
+                    packet.length <
+                    jsonEnd
+                ) {
                     return;
                 }
 
-                const jsonString = packet
-                    .subarray(jsonStart, jsonEnd)
-                    .toString("utf8");
 
-                const status = JSON.parse(jsonString);
+                const jsonString =
+                    packet
+                        .subarray(
+                            jsonStart,
+                            jsonEnd
+                        )
+                        .toString("utf8");
+
+
+                const status =
+                    JSON.parse(jsonString);
+
 
                 finish(null, status);
+
             } catch (error) {
+
                 finish(error);
+
             }
+
         });
 
-        socket.connect(port, host, () => {
-            try {
-                socket.write(createHandshake(host, port));
-                socket.write(createStatusRequest());
-            } catch (error) {
-                finish(error);
+
+        socket.connect(
+            port,
+            host,
+            () => {
+
+                try {
+
+                    socket.write(
+                        createHandshake(
+                            host,
+                            port
+                        )
+                    );
+
+                    socket.write(
+                        createStatusRequest()
+                    );
+
+                } catch (error) {
+
+                    finish(error);
+
+                }
+
             }
-        });
+        );
+
     });
 }
 
-/*
- * Limpia el MOTD por si viene con formato JSON.
- */
-function cleanText(value) {
-    if (!value) return "";
 
-    if (typeof value === "string") {
-        return value
-            .replace(/§[0-9a-fklmnor]/gi, "")
-            .replace(/<[^>]*>/g, "")
-            .trim();
+// ================================
+// LIMPIAR TEXTO
+// ================================
+
+function cleanText(value) {
+
+    if (!value) {
+        return "";
     }
 
+
+    if (typeof value === "string") {
+
+        return value
+            .replace(
+                /§[0-9a-fklmnor]/gi,
+                ""
+            )
+            .replace(
+                /<[^>]*>/g,
+                ""
+            )
+            .trim();
+
+    }
+
+
     if (typeof value === "object") {
+
         let result = "";
+
 
         if (value.text) {
             result += value.text;
         }
 
+
         if (Array.isArray(value.extra)) {
+
             for (const item of value.extra) {
+
                 result += cleanText(item);
+
             }
+
         }
 
+
         return result.trim();
+
     }
+
 
     return "";
 }
 
-/*
- * API principal.
- */
+
+// ================================
+// API DEL ESTADO
+// ================================
+
 app.get("/api/status", async (req, res) => {
+
     try {
-        const address = await resolveMinecraftAddress(MINECRAFT_HOST);
 
-        const status = await queryMinecraft(
-            address.host,
-            address.port
-        );
+        const address =
+            await resolveMinecraftAddress(
+                MINECRAFT_HOST
+            );
 
-        const players = status.players || {};
+
+        const status =
+            await queryMinecraft(
+                address.host,
+                address.port
+            );
+
+
+        const players =
+            status.players || {};
+
 
         const onlinePlayers =
-            Number(players.online || 0);
+            Number(
+                players.online || 0
+            );
+
 
         const maxPlayers =
-            Number(players.max || 0);
+            Number(
+                players.max || 0
+            );
 
-        let version = "Minecraft";
 
-        if (status.version && status.version.name) {
-            version = status.version.name;
+        let version =
+            "Minecraft";
+
+
+        if (
+            status.version &&
+            status.version.name
+        ) {
+
+            version =
+                status.version.name;
+
         }
 
-        const motd = cleanText(status.description);
+
+        const motd =
+            cleanText(
+                status.description
+            );
+
 
         res.json({
+
             online: true,
+
             host: MINECRAFT_HOST,
-            resolvedHost: address.host,
-            port: address.port,
+
+            resolvedHost:
+                address.host,
+
+            port:
+                address.port,
+
             players: {
-                online: onlinePlayers,
-                max: maxPlayers
+
+                online:
+                    onlinePlayers,
+
+                max:
+                    maxPlayers
+
             },
+
             version,
+
             motd,
-            favicon: status.favicon || null,
-            updatedAt: new Date().toISOString()
+
+            favicon:
+                status.favicon || null,
+
+            updatedAt:
+                new Date().toISOString()
+
         });
+
+
     } catch (error) {
-        console.error("Minecraft status error:", error.message);
+
+        console.error(
+            "Minecraft status error:",
+            error.message
+        );
+
 
         res.json({
+
             online: false,
-            host: MINECRAFT_HOST,
+
+            host:
+                MINECRAFT_HOST,
+
             players: {
+
                 online: 0,
+
                 max: 0
+
             },
-            version: "—",
-            motd: "Servidor no disponible",
-            updatedAt: new Date().toISOString()
+
+            version:
+                "—",
+
+            motd:
+                "Servidor no disponible",
+
+            updatedAt:
+                new Date().toISOString()
+
         });
+
     }
+
 });
 
-/*
- * Health check para Render.
- */
+
+// ================================
+// HEALTH CHECK PARA RENDER
+// ================================
+
 app.get("/health", (req, res) => {
+
     res.status(200).send("OK");
+
 });
 
-/*
- * Ruta de la web.
- */
-app.get("*", (req, res) => {
-    res.sendFile("index.html", {
-        root: "public"
-    });
+
+// ================================
+// RUTA PRINCIPAL
+// ================================
+//
+// Importante:
+// No usamos app.get("*") porque Express 5
+// genera un error con ese patrón.
+//
+// app.use() funciona correctamente.
+//
+
+app.use((req, res) => {
+
+    res.sendFile(
+        "index.html",
+        {
+            root: "public"
+        }
+    );
+
 });
 
-/*
- * Render necesita escuchar en 0.0.0.0.
- */
-app.listen(PORT, HOST, () => {
-    console.log(`Eclipse World web iniciada en ${HOST}:${PORT}`);
-    console.log(`Minecraft: ${MINECRAFT_HOST}`);
-});
+
+// ================================
+// INICIAR SERVIDOR
+// ================================
+
+app.listen(
+    PORT,
+    HOST,
+    () => {
+
+        console.log(
+            `Eclipse World web iniciada en ${HOST}:${PORT}`
+        );
+
+        console.log(
+            `Minecraft: ${MINECRAFT_HOST}`
+        );
+
+    }
+);
