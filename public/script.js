@@ -1,369 +1,256 @@
-```js
 const SERVER_IP = "play.eclipseworld.pro";
 const DISCORD_URL = "https://discord.gg/m3vDUP8Qb6";
 
+const $ = (id) => document.getElementById(id);
 
-// ==========================================
-// ELEMENTOS DE LA WEB
-// ==========================================
+// Elementos
+const statusDot = $("statusDot");
+const statusText = $("statusText");
+const serverIp = $("serverIp");
+const players = $("players");
+const version = $("version");
+const serverState = $("serverState");
+const motd = $("motd");
+const updated = $("updated");
+const discordButton = $("discordButton");
+const copyIp = $("copyIp");
+const copyMessage = $("copyMessage");
 
-const copyButton = document.getElementById("copyIp");
-const copyMessage = document.getElementById("copyMessage");
-
-const statusDot = document.getElementById("statusDot");
-const statusText = document.getElementById("statusText");
-
-const players = document.getElementById("players");
-const version = document.getElementById("version");
-const serverState = document.getElementById("serverState");
-
-const motd = document.getElementById("motd");
-const updated = document.getElementById("updated");
-
-const discordButton = document.getElementById("discordButton");
-
-
-// ==========================================
-// IP DEL SERVIDOR
-// ==========================================
-
-const serverIpElement =
-    document.getElementById("serverIp");
-
-if (serverIpElement) {
-    serverIpElement.textContent = SERVER_IP;
+// IP
+if (serverIp) {
+    serverIp.textContent = SERVER_IP;
 }
 
-
-// ==========================================
-// BOTÓN COPIAR IP
-// ==========================================
-
-if (copyButton) {
-
-    copyButton.addEventListener(
-        "click",
-        async () => {
-
-            try {
-
-                await navigator.clipboard.writeText(
-                    SERVER_IP
-                );
-
-                copyMessage.textContent =
-                    "✓ IP copiada: " + SERVER_IP;
-
-                copyButton.textContent =
-                    "✓ IP COPIADA";
-
-
-                setTimeout(() => {
-
-                    copyMessage.textContent = "";
-
-                    copyButton.textContent =
-                        "COPIAR IP";
-
-                }, 2500);
-
-
-            } catch (error) {
-
-                // Alternativa para navegadores
-                // que bloqueen navigator.clipboard
-
-                const textarea =
-                    document.createElement("textarea");
-
-                textarea.value =
-                    SERVER_IP;
-
-                textarea.style.position =
-                    "fixed";
-
-                textarea.style.opacity =
-                    "0";
-
-                document.body.appendChild(
-                    textarea
-                );
-
-                textarea.select();
-
-                try {
-                    document.execCommand("copy");
-                } catch (e) {
-                    console.error(e);
-                }
-
-                textarea.remove();
-
-
-                copyMessage.textContent =
-                    "✓ IP copiada: " + SERVER_IP;
-
-                copyButton.textContent =
-                    "✓ IP COPIADA";
-
-
-                setTimeout(() => {
-
-                    copyMessage.textContent = "";
-
-                    copyButton.textContent =
-                        "COPIAR IP";
-
-                }, 2500);
-
-            }
-
-        }
-    );
-
-}
-
-
-// ==========================================
-// BOTÓN DISCORD
-// ==========================================
-
+// Discord
 if (discordButton) {
-
-    discordButton.href =
-        DISCORD_URL;
-
-    discordButton.target =
-        "_blank";
-
-    discordButton.rel =
-        "noopener noreferrer";
-
+    discordButton.href = DISCORD_URL;
+    discordButton.target = "_blank";
+    discordButton.rel = "noopener noreferrer";
 }
 
-
-// ==========================================
-// FORMATEAR HORA
-// ==========================================
-
-function formatTime(dateString) {
-
-    if (!dateString) {
-        return "—";
+// Copiar IP
+function copiarIP() {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(SERVER_IP)
+            .then(() => mostrarCopiado())
+            .catch(() => copiarFallback());
+    } else {
+        copiarFallback();
     }
-
-    const date =
-        new Date(dateString);
-
-    if (Number.isNaN(date.getTime())) {
-        return "—";
-    }
-
-    return date.toLocaleTimeString(
-        "es-ES",
-        {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit"
-        }
-    );
-
 }
 
-
-// ==========================================
-// MOSTRAR SERVIDOR ONLINE
-// ==========================================
-
-function showOnline(data) {
-
-    statusDot.className =
-        "status-dot online";
-
-    statusText.textContent =
-        "SERVIDOR ONLINE";
-
-    serverState.textContent =
-        "ONLINE";
-
-
-    const online =
-        data.players?.online ?? 0;
-
-    const max =
-        data.players?.max ?? 0;
-
-    players.textContent =
-        `${online} / ${max}`;
-
-
-    version.textContent =
-        data.version || "Minecraft";
-
-
-    motd.textContent =
-        data.motd ||
-        "Eclipse World";
-
-
-    updated.textContent =
-        formatTime(
-            data.updatedAt
-        );
-
-}
-
-
-// ==========================================
-// MOSTRAR SERVIDOR OFFLINE
-// ==========================================
-
-function showOffline(data) {
-
-    statusDot.className =
-        "status-dot offline";
-
-    statusText.textContent =
-        "SERVIDOR OFFLINE";
-
-    serverState.textContent =
-        "OFFLINE";
-
-
-    players.textContent =
-        "0 / 0";
-
-
-    version.textContent =
-        "—";
-
-
-    motd.textContent =
-        data.motd ||
-        "El servidor está offline.";
-
-
-    updated.textContent =
-        formatTime(
-            data.updatedAt
-        );
-
-}
-
-
-// ==========================================
-// ESTADO DE CARGA
-// ==========================================
-
-function showLoading() {
-
-    statusDot.className =
-        "status-dot loading";
-
-    statusText.textContent =
-        "COMPROBANDO...";
-
-}
-
-
-// ==========================================
-// CONSULTAR ESTADO REAL
-// ==========================================
-
-async function loadServerStatus() {
-
-    showLoading();
-
+function copiarFallback() {
+    const input = document.createElement("input");
+    input.value = SERVER_IP;
+    document.body.appendChild(input);
+    input.select();
 
     try {
-
-        const response =
-            await fetch(
-                "/api/status",
-                {
-                    method: "GET",
-                    cache: "no-store"
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        console.log(
-            "Estado de Eclipse World:",
-            data
-        );
-
-
-        if (data.online === true) {
-
-            showOnline(data);
-
-        } else {
-
-            showOffline(data);
-
-        }
-
-
+        document.execCommand("copy");
+        mostrarCopiado();
     } catch (error) {
-
-        console.error(
-            "Error obteniendo estado:",
-            error
-        );
-
-
-        statusDot.className =
-            "status-dot offline";
-
-        statusText.textContent =
-            "SIN CONEXIÓN";
-
-        serverState.textContent =
-            "SIN DATOS";
-
-        players.textContent =
-            "—";
-
-        version.textContent =
-            "—";
-
-        motd.textContent =
-            "No se ha podido consultar el servidor.";
-
-        updated.textContent =
-            "—";
-
+        console.error("No se pudo copiar la IP:", error);
     }
 
+    input.remove();
 }
 
+function mostrarCopiado() {
+    const botones = [copyIp, copyMessage];
 
-// ==========================================
-// PRIMERA CONSULTA
-// ==========================================
+    botones.forEach((boton) => {
+        if (!boton) return;
 
-loadServerStatus();
+        const textoOriginal = boton.textContent;
+        boton.textContent = "✓ COPIADO";
 
+        setTimeout(() => {
+            boton.textContent = textoOriginal;
+        }, 1500);
+    });
+}
 
-// ==========================================
-// ACTUALIZAR CADA 30 SEGUNDOS
-// ==========================================
+if (copyIp) {
+    copyIp.addEventListener("click", copiarIP);
+}
 
-setInterval(
-    loadServerStatus,
-    30000
-);
-```
+if (copyMessage) {
+    copyMessage.addEventListener("click", copiarIP);
+}
+
+// Hora de actualización
+function formatTime(dateString) {
+    if (!dateString) return "—";
+
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+        return "—";
+    }
+
+    return date.toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    });
+}
+
+// Estado cargando
+function mostrarCargando() {
+    if (statusDot) {
+        statusDot.className = "status-dot loading";
+    }
+
+    if (statusText) {
+        statusText.textContent = "COMPROBANDO...";
+    }
+
+    if (players) {
+        players.textContent = "—";
+    }
+
+    if (version) {
+        version.textContent = "—";
+    }
+
+    if (serverState) {
+        serverState.textContent = "Consultando...";
+    }
+
+    if (motd) {
+        motd.textContent = "Consultando información...";
+    }
+}
+
+// Servidor online
+function mostrarOnline(data) {
+    if (statusDot) {
+        statusDot.className = "status-dot online";
+    }
+
+    if (statusText) {
+        statusText.textContent = "● LIVE";
+    }
+
+    if (players) {
+        const online = data.players?.online ?? 0;
+        const max = data.players?.max ?? 0;
+
+        players.textContent = `${online}/${max}`;
+    }
+
+    if (version) {
+        version.textContent = data.version || "Desconocida";
+    }
+
+    if (serverState) {
+        serverState.textContent = "ONLINE";
+    }
+
+    if (motd) {
+        motd.textContent = data.motd || "Eclipse World";
+    }
+
+    if (updated) {
+        updated.textContent = formatTime(data.updatedAt);
+    }
+}
+
+// Servidor offline
+function mostrarOffline(data = {}) {
+    if (statusDot) {
+        statusDot.className = "status-dot offline";
+    }
+
+    if (statusText) {
+        statusText.textContent = "● OFFLINE";
+    }
+
+    if (players) {
+        players.textContent = "0/0";
+    }
+
+    if (version) {
+        version.textContent = data.version || "—";
+    }
+
+    if (serverState) {
+        serverState.textContent = "OFFLINE";
+    }
+
+    if (motd) {
+        motd.textContent = "El servidor está apagado.";
+    }
+
+    if (updated) {
+        updated.textContent = formatTime(data.updatedAt);
+    }
+}
+
+// Obtener información real
+async function loadServerStatus() {
+    try {
+        mostrarCargando();
+
+        const response = await fetch("/api/status", {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        console.log("Estado recibido:", data);
+
+        if (data.online === true) {
+            mostrarOnline(data);
+        } else {
+            mostrarOffline(data);
+        }
+
+    } catch (error) {
+        console.error("Error obteniendo el estado:", error);
+
+        if (statusDot) {
+            statusDot.className = "status-dot offline";
+        }
+
+        if (statusText) {
+            statusText.textContent = "● ERROR";
+        }
+
+        if (players) {
+            players.textContent = "—";
+        }
+
+        if (version) {
+            version.textContent = "—";
+        }
+
+        if (serverState) {
+            serverState.textContent = "SIN DATOS";
+        }
+
+        if (motd) {
+            motd.textContent = "No se pudo consultar el servidor.";
+        }
+
+        if (updated) {
+            updated.textContent = "Error";
+        }
+    }
+}
+
+// Cargar al entrar
+document.addEventListener("DOMContentLoaded", () => {
+    loadServerStatus();
+
+    // Actualizar cada 30 segundos
+    setInterval(loadServerStatus, 30000);
+});
