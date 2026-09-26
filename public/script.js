@@ -3,84 +3,122 @@ const DISCORD_URL = "https://discord.gg/m3vDUP8Qb6";
 
 const $ = (id) => document.getElementById(id);
 
-// Elementos
+
+// ==============================
+// ELEMENTOS
+// ==============================
+
 const statusDot = $("statusDot");
 const statusText = $("statusText");
+
 const serverIp = $("serverIp");
+const heroIp = $("heroIp");
+
 const players = $("players");
 const version = $("version");
 const serverState = $("serverState");
 const motd = $("motd");
 const updated = $("updated");
-const discordButton = $("discordButton");
-const copyIp = $("copyIp");
-const copyMessage = $("copyMessage");
 
-// IP
+const discordButton = $("discordButton");
+
+const copyIp = $("copyIp");
+const heroCopy = $("heroCopy");
+const heroCopySmall = $("heroCopySmall");
+
+const toast = $("toast");
+
+
+// ==============================
+// CONFIGURACIÓN
+// ==============================
+
 if (serverIp) {
     serverIp.textContent = SERVER_IP;
 }
 
-// Discord
+if (heroIp) {
+    heroIp.textContent = SERVER_IP;
+}
+
 if (discordButton) {
     discordButton.href = DISCORD_URL;
-    discordButton.target = "_blank";
-    discordButton.rel = "noopener noreferrer";
 }
 
-// Copiar IP
-function copiarIP() {
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(SERVER_IP)
-            .then(() => mostrarCopiado())
-            .catch(() => copiarFallback());
-    } else {
-        copiarFallback();
-    }
-}
 
-function copiarFallback() {
-    const input = document.createElement("input");
-    input.value = SERVER_IP;
-    document.body.appendChild(input);
-    input.select();
+// ==============================
+// COPIAR IP
+// ==============================
+
+async function copyServerIp() {
 
     try {
-        document.execCommand("copy");
-        mostrarCopiado();
+
+        if (navigator.clipboard && window.isSecureContext) {
+
+            await navigator.clipboard.writeText(SERVER_IP);
+
+        } else {
+
+            const input = document.createElement("input");
+
+            input.value = SERVER_IP;
+
+            document.body.appendChild(input);
+
+            input.select();
+
+            document.execCommand("copy");
+
+            input.remove();
+        }
+
+        showToast();
+
     } catch (error) {
-        console.error("No se pudo copiar la IP:", error);
+
+        console.error("Error copiando IP:", error);
+
     }
-
-    input.remove();
 }
 
-function mostrarCopiado() {
-    const botones = [copyIp, copyMessage];
 
-    botones.forEach((boton) => {
-        if (!boton) return;
+function showToast() {
 
-        const textoOriginal = boton.textContent;
-        boton.textContent = "✓ COPIADO";
+    if (!toast) return;
 
-        setTimeout(() => {
-            boton.textContent = textoOriginal;
-        }, 1500);
-    });
+    toast.classList.add("show");
+
+    setTimeout(() => {
+
+        toast.classList.remove("show");
+
+    }, 1800);
 }
+
 
 if (copyIp) {
-    copyIp.addEventListener("click", copiarIP);
+    copyIp.addEventListener("click", copyServerIp);
 }
 
-if (copyMessage) {
-    copyMessage.addEventListener("click", copiarIP);
+if (heroCopy) {
+    heroCopy.addEventListener("click", copyServerIp);
 }
 
-// Hora de actualización
+if (heroCopySmall) {
+    heroCopySmall.addEventListener("click", copyServerIp);
+}
+
+
+// ==============================
+// HORA
+// ==============================
+
 function formatTime(dateString) {
-    if (!dateString) return "—";
+
+    if (!dateString) {
+        return "—";
+    }
 
     const date = new Date(dateString);
 
@@ -95,8 +133,13 @@ function formatTime(dateString) {
     });
 }
 
-// Estado cargando
-function mostrarCargando() {
+
+// ==============================
+// ESTADO CARGANDO
+// ==============================
+
+function showLoading() {
+
     if (statusDot) {
         statusDot.className = "status-dot loading";
     }
@@ -114,7 +157,7 @@ function mostrarCargando() {
     }
 
     if (serverState) {
-        serverState.textContent = "Consultando...";
+        serverState.textContent = "CONSULTANDO";
     }
 
     if (motd) {
@@ -122,8 +165,13 @@ function mostrarCargando() {
     }
 }
 
-// Servidor online
-function mostrarOnline(data) {
+
+// ==============================
+// SERVIDOR ONLINE
+// ==============================
+
+function showOnline(data) {
+
     if (statusDot) {
         statusDot.className = "status-dot online";
     }
@@ -133,6 +181,7 @@ function mostrarOnline(data) {
     }
 
     if (players) {
+
         const online = data.players?.online ?? 0;
         const max = data.players?.max ?? 0;
 
@@ -140,7 +189,10 @@ function mostrarOnline(data) {
     }
 
     if (version) {
-        version.textContent = data.version || "Desconocida";
+        version.textContent =
+            data.version ||
+            data.protocol?.name ||
+            "Minecraft";
     }
 
     if (serverState) {
@@ -148,16 +200,34 @@ function mostrarOnline(data) {
     }
 
     if (motd) {
-        motd.textContent = data.motd || "Eclipse World";
+
+        motd.textContent =
+            data.motd ||
+            "Eclipse World";
+
     }
 
     if (updated) {
         updated.textContent = formatTime(data.updatedAt);
     }
+
+    // Cambiar todos los indicadores LIVE
+    document
+        .querySelectorAll(".server-online .status-dot")
+        .forEach(dot => {
+
+            dot.className = "status-dot online";
+
+        });
 }
 
-// Servidor offline
-function mostrarOffline(data = {}) {
+
+// ==============================
+// SERVIDOR OFFLINE
+// ==============================
+
+function showOffline(data = {}) {
+
     if (statusDot) {
         statusDot.className = "status-dot offline";
     }
@@ -179,78 +249,174 @@ function mostrarOffline(data = {}) {
     }
 
     if (motd) {
-        motd.textContent = "El servidor está apagado.";
+        motd.textContent = "El servidor está actualmente apagado.";
     }
 
     if (updated) {
         updated.textContent = formatTime(data.updatedAt);
     }
+
+    document
+        .querySelectorAll(".server-online .status-dot")
+        .forEach(dot => {
+
+            dot.className = "status-dot offline";
+
+        });
 }
 
-// Obtener información real
-async function loadServerStatus() {
-    try {
-        mostrarCargando();
 
-        const response = await fetch("/api/status", {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-                "Accept": "application/json"
-            }
+// ==============================
+// ERROR
+// ==============================
+
+function showError() {
+
+    if (statusDot) {
+        statusDot.className = "status-dot offline";
+    }
+
+    if (statusText) {
+        statusText.textContent = "● ERROR";
+    }
+
+    if (players) {
+        players.textContent = "—";
+    }
+
+    if (version) {
+        version.textContent = "—";
+    }
+
+    if (serverState) {
+        serverState.textContent = "SIN DATOS";
+    }
+
+    if (motd) {
+        motd.textContent =
+            "No se pudo consultar el estado del servidor.";
+    }
+
+    document
+        .querySelectorAll(".server-online .status-dot")
+        .forEach(dot => {
+
+            dot.className = "status-dot offline";
+
         });
+}
+
+
+// ==============================
+// CONSULTAR SERVIDOR
+// ==============================
+
+async function loadServerStatus() {
+
+    try {
+
+        showLoading();
+
+        const response = await fetch(
+            `/api/status?t=${Date.now()}`,
+            {
+                method: "GET",
+                cache: "no-store",
+                headers: {
+                    "Accept": "application/json"
+                }
+            }
+        );
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
         }
 
         const data = await response.json();
 
-        console.log("Estado recibido:", data);
+        console.log(
+            "Eclipse World — estado:",
+            data
+        );
 
         if (data.online === true) {
-            mostrarOnline(data);
+
+            showOnline(data);
+
         } else {
-            mostrarOffline(data);
+
+            showOffline(data);
+
         }
 
     } catch (error) {
-        console.error("Error obteniendo el estado:", error);
 
-        if (statusDot) {
-            statusDot.className = "status-dot offline";
-        }
+        console.error(
+            "Eclipse World — error:",
+            error
+        );
 
-        if (statusText) {
-            statusText.textContent = "● ERROR";
-        }
-
-        if (players) {
-            players.textContent = "—";
-        }
-
-        if (version) {
-            version.textContent = "—";
-        }
-
-        if (serverState) {
-            serverState.textContent = "SIN DATOS";
-        }
-
-        if (motd) {
-            motd.textContent = "No se pudo consultar el servidor.";
-        }
-
-        if (updated) {
-            updated.textContent = "Error";
-        }
+        showError();
     }
 }
 
-// Cargar al entrar
-document.addEventListener("DOMContentLoaded", () => {
-    loadServerStatus();
 
-    // Actualizar cada 30 segundos
-    setInterval(loadServerStatus, 30000);
-});
+// ==============================
+// ANIMACIÓN AL HACER SCROLL
+// ==============================
+
+const observer = new IntersectionObserver(
+    (entries) => {
+
+        entries.forEach(entry => {
+
+            if (entry.isIntersecting) {
+
+                entry.target.classList.add("visible");
+
+            }
+
+        });
+
+    },
+    {
+        threshold: 0.12
+    }
+);
+
+
+document
+    .querySelectorAll(
+        ".feature-card, .server-card, .community-card"
+    )
+    .forEach(element => {
+
+        element.classList.add("scroll-hidden");
+
+        observer.observe(element);
+
+    });
+
+
+// ==============================
+// INICIO
+// ==============================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        loadServerStatus();
+
+        // Actualizar cada 30 segundos
+        setInterval(
+            loadServerStatus,
+            30000
+        );
+
+    }
+);
